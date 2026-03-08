@@ -529,12 +529,14 @@
     document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + cat));
   }
 
-  // ── Add word/phrase to strip ───────────────────────────
+  // ── Add word/phrase to strip AND speak immediately ────
   function say(text) {
     words.push(text);
     renderStrip();
     // Haptic feedback if available
     if (navigator.vibrate) navigator.vibrate(40);
+    // Speak immediately on button tap
+    speak(text);
   }
 
   function renderStrip() {
