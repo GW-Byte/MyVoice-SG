@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>MyVoice SG — AAC App for Children</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFF9F0;
+    --card: #FFFFFF;
+    --transport: #4A90D9;
+    --transport-light: #EAF3FB;
+    --food: #E8834A;
+    --food-light: #FEF0E6;
+    --social: #6CC04A;
+    --social-light: #EEF9E8;
+    --shopping: #9B6BD4;
+    --shopping-light: #F3EDFC;
+    --emergency: #E53E3E;
+    --emergency-light: #FEE;
+    --text: #2D2D2D;
+    --text-muted: #888;
+    --shadow: 0 4px 16px rgba(0,0,0,0.10);
+    --radius: 20px;
+    --radius-btn: 16px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── TOP BAR ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px 10px;
+    background: var(--card);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    position: sticky; top:0; z-index:100;
+  }
+  .logo { display:flex; align-items:center; gap:10px; }
+  .logo-icon { font-size:30px; }
+  .logo-text { font-size:20px; font-weight:900; color: var(--transport); letter-spacing:-0.5px; }
+  .logo-sub { font-size:12px; color:var(--text-muted); font-weight:600; }
+
+  .header-right { display:flex; gap:10px; align-items:center; }
+  .btn-speech-output {
+    background: linear-gradient(135deg, #4A90D9, #7B5EA7);
+    color: #fff;
+    border: none; border-radius:40px;
+    padding: 8px 16px;
+    font-family:'Nunito',sans-serif;
+    font-weight:800; font-size:13px;
+    cursor:pointer;
+    display:flex; align-items:center; gap:6px;
+    box-shadow: 0 4px 12px rgba(74,144,217,0.4);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .btn-speech-output:active { transform:scale(0.95); box-shadow:none; }
+
+  /* ── SPEECH STRIP ── */
+  #speechStrip {
+    background: #fff;
+    border-bottom: 2px solid #F0EAE0;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 60px;
+  }
+  #speechText {
+    flex:1;
+    font-size: 17px;
+    font-weight:700;
+    color: var(--text);
+    min-height:32px;
+    display:flex; align-items:center;
+    flex-wrap:wrap; gap:6px;
+  }
+  .speech-word {
+    background: #EAF3FB;
+    border-radius:8px;
+    padding:3px 10px;
+    font-size:15px;
+    font-weight:700;
+    color: var(--transport);
+    cursor:pointer;
+    transition: background 0.15s;
+  }
+  .speech-word:hover { background:#d0e9fa; }
+  #speechPlaceholder { color:#CCC; font-weight:600; font-size:15px; }
+  .strip-actions { display:flex; gap:8px; }
+  .strip-btn {
+    border:none; border-radius:12px; padding:8px 14px;
+    font-family:'Nunito',sans-serif; font-weight:800; font-size:13px;
+    cursor:pointer; transition:transform 0.1s;
+  }
+  .strip-btn:active { transform:scale(0.93); }
+  #speakBtn { background:#4A90D9; color:#fff; }
+  #clearBtn { background:#F0EAE0; color:#888; }
+
+  /* ── NAV TABS ── */
+  nav {
+    display:flex; gap:0;
+    padding: 14px 16px 0;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  nav::-webkit-scrollbar { display:none; }
+  .tab {
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding: 10px 18px 8px;
+    border-radius: 16px 16px 0 0;
+    background: #EDE8E0;
+    border:none; cursor:pointer;
+    font-family:'Nunito',sans-serif;
+    font-weight:800; font-size:13px;
+    color:#999;
+    white-space:nowrap;
+    transition: background 0.15s, color 0.15s;
+    margin-right:4px;
+  }
+  .tab .tab-icon { font-size:22px; }
+  .tab.active { background:#fff; color:var(--tab-color,#4A90D9); box-shadow:0 -2px 8px rgba(0,0,0,0.07); }
+  .tab[data-cat="transport"]  { --tab-color: var(--transport); }
+  .tab[data-cat="food"]       { --tab-color: var(--food); }
+  .tab[data-cat="shopping"]   { --tab-color: var(--shopping); }
+  .tab[data-cat="social"]     { --tab-color: var(--social); }
+  .tab[data-cat="emergency"]  { --tab-color: var(--emergency); }
+
+  /* ── PANELS ── */
+  .panel { display:none; padding:16px; }
+  .panel.active { display:block; }
+
+  /* ── SECTION HEADING ── */
+  .section-title {
+    font-size:13px; font-weight:800; text-transform:uppercase;
+    letter-spacing:1px; color:var(--text-muted);
+    margin: 16px 0 10px;
+  }
+  .section-title:first-child { margin-top:0; }
+
+  /* ── BUTTON GRID ── */
+  .btn-grid {
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap:12px;
+    margin-bottom:6px;
+  }
+  .btn-grid.compact { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:9px; }
+
+  /* ── AAC BUTTON ── */
+  .aac-btn {
+    background: var(--btn-bg, #fff);
+    border: 2.5px solid var(--btn-border, #eee);
+    border-radius: var(--radius-btn);
+    padding: 14px 10px 12px;
+    cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    font-family:'Nunito',sans-serif;
+    font-weight:800; font-size:13px; line-height:1.3;
+    color: var(--btn-color, #333);
+    text-align:center;
+    transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
+    user-select:none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    position:relative; overflow:hidden;
+  }
+  .aac-btn:active { transform:scale(0.93); box-shadow:none; }
+  .aac-btn .icon { font-size:30px; line-height:1; }
+  .aac-btn .label { font-size:12.5px; font-weight:800; }
+  .aac-btn .sublabel { font-size:10px; font-weight:600; color:var(--text-muted); }
+
+  /* category colours */
+  .aac-btn.transport { --btn-bg:var(--transport-light); --btn-border:var(--transport); --btn-color:var(--transport); }
+  .aac-btn.food      { --btn-bg:var(--food-light);      --btn-border:var(--food);      --btn-color:var(--food); }
+  .aac-btn.shopping  { --btn-bg:var(--shopping-light);  --btn-border:var(--shopping);  --btn-color:var(--shopping); }
+  .aac-btn.social    { --btn-bg:var(--social-light);    --btn-border:var(--social);    --btn-color:var(--social); }
+  .aac-btn.emergency { --btn-bg:var(--emergency-light); --btn-border:var(--emergency); --btn-color:var(--emergency); animation: pulse-red 2s infinite; }
+
+  @keyframes pulse-red {
+    0%,100% { box-shadow:0 0 0 0 rgba(229,62,62,0.4); }
+    50% { box-shadow:0 0 0 8px rgba(229,62,62,0); }
+  }
+
+  /* ── PHRASE CHIP (longer text) ── */
+  .phrase-chip {
+    background:#fff;
+    border:2px solid #E8E0D8;
+    border-radius:40px;
+    padding:10px 18px;
+    font-family:'Nunito',sans-serif;
+    font-weight:700; font-size:14px;
+    cursor:pointer;
+    display:inline-flex; align-items:center; gap:8px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.06);
+    transition:transform 0.1s, background 0.1s;
+    margin:4px;
+  }
+  .phrase-chip:active { transform:scale(0.95); background:#F5F0EA; }
+  .phrase-chip span { font-size:18px; }
+
+  .chips-wrap { display:flex; flex-wrap:wrap; margin-bottom:4px; }
+
+  /* ── BACK BUTTON ── */
+  .btn-back {
+    background:none; border:none; cursor:pointer;
+    font-family:'Nunito',sans-serif; font-weight:800;
+    font-size:14px; color:var(--text-muted);
+    display:flex; align-items:center; gap:5px;
+    margin-bottom:14px; padding:4px;
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(40px);
+    background:#2D2D2D; color:#fff;
+    padding:10px 22px; border-radius:40px;
+    font-family:'Nunito',sans-serif; font-weight:700; font-size:14px;
+    opacity:0; pointer-events:none;
+    transition:opacity 0.25s, transform 0.25s;
+    z-index:999;
+  }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ── SPEAKING ANIMATION ── */
+  .speaking-wave {
+    display:inline-flex; gap:3px; align-items:center;
+  }
+  .speaking-wave span {
+    display:block; width:4px; background:#fff; border-radius:2px;
+    animation: wave 0.7s ease-in-out infinite alternate;
+  }
+  .speaking-wave span:nth-child(1) { height:8px; animation-delay:0s; }
+  .speaking-wave span:nth-child(2) { height:14px; animation-delay:0.15s; }
+  .speaking-wave span:nth-child(3) { height:8px; animation-delay:0.3s; }
+  @keyframes wave { to { height:3px; } }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:400px) {
+    .btn-grid { grid-template-columns: repeat(3, 1fr); gap:8px; }
+    .aac-btn .icon { font-size:24px; }
+    .aac-btn .label { font-size:11px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <span class="logo-icon">🗣️</span>
+    <div>
+      <div class="logo-text">MyVoice SG</div>
+      <div class="logo-sub">Speak for me</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn-speech-output" id="mainSpeakBtn" onclick="speakAll()">
+      <div class="speaking-wave" id="waveAnim" style="display:none">
+        <span></span><span></span><span></span>
+      </div>
+      <span id="speakBtnLabel">🔊 Speak</span>
+    </button>
+  </div>
+</header>
+
+<!-- SPEECH STRIP -->
+<div id="speechStrip">
+  <div id="speechText">
+    <span id="speechPlaceholder">Tap buttons to build your message…</span>
+  </div>
+  <div class="strip-actions">
+    <button class="strip-btn" id="speakBtn" onclick="speakAll()">▶ Say</button>
+    <button class="strip-btn" id="clearBtn" onclick="clearSpeech()">✕</button>
+  </div>
+</div>
+
+<!-- NAV TABS -->
+<nav>
+  <button class="tab active" data-cat="transport" onclick="switchTab('transport')">
+    <span class="tab-icon">🚌</span> Transport
+  </button>
+  <button class="tab" data-cat="food" onclick="switchTab('food')">
+    <span class="tab-icon">🍜</span> Food
+  </button>
+  <button class="tab" data-cat="shopping" onclick="switchTab('shopping')">
+    <span class="tab-icon">🛒</span> Shopping
+  </button>
+  <button class="tab" data-cat="social" onclick="switchTab('social')">
+    <span class="tab-icon">😊</span> Social
+  </button>
+  <button class="tab" data-cat="emergency" onclick="switchTab('emergency')">
+    <span class="tab-icon">🆘</span> Help
+  </button>
+</nav>
+
+<!-- ═══════════════ TRANSPORT PANEL ═══════════════ -->
+<div class="panel active" id="panel-transport">
+
+  <div class="section-title">🚌 Bus & MRT</div>
+  <div class="btn-grid">
+    <button class="aac-btn transport" onclick="say('I want to take the bus')"><span class="icon">🚌</span><span class="label">Take Bus</span></button>
+    <button class="aac-btn transport" onclick="say('I want to take the MRT')"><span class="icon">🚇</span><span class="label">Take MRT</span></button>
+    <button class="aac-btn transport" onclick="say('Please help me tap my EZ-Link card')"><span class="icon">💳</span><span class="label">EZ-Link Card</span></button>
+    <button class="aac-btn transport" onclick="say('I need to buy a ticket')"><span class="icon">🎟️</span><span class="label">Buy Ticket</span></button>
+    <button class="aac-btn transport" onclick="say('Which platform should I go to?')"><span class="icon">📍</span><span class="label">Which Platform?</span></button>
+    <button class="aac-btn transport" onclick="say('I want to sit down')"><span class="icon">💺</span><span class="label">Sit Down</span></button>
+  </div>
+
+  <div class="section-title">📍 Common Destinations</div>
+  <div class="btn-grid compact">
+    <button class="aac-btn transport" onclick="say('I want to go to school')"><span class="icon">🏫</span><span class="label">School</span></button>
+    <button class="aac-btn transport" onclick="say('I want to go home')"><span class="icon">🏠</span><span class="label">Home</span></button>
+    <button class="aac-btn transport" onclick="say('I want to go to the hospital')"><span class="icon">🏥</span><span class="label">Hospital</span></button>
+    <button class="aac-btn transport" onclick="say('I want to go to the shopping mall')"><span class="icon">🏬</span><span class="label">Shopping Mall</span></button>
+    <button class="aac-btn transport" onclick="say('I want to go to the park')"><span class="icon">🌳</span><span class="label">Park</span></button>
+    <button class="aac-btn transport" onclick="say('I want to go to the market')"><span class="icon">🏪</span><span class="label">Market</span></button>
+  </div>
+
+  <div class="section-title">💬 On the Way</div>
+  <div class="chips-wrap">
+    <button class="phrase-chip" onclick="say('Is this the right bus?')"><span>🤔</span> Is this the right bus?</button>
+    <button class="phrase-chip" onclick="say('Can you tell me when to get off?')"><span>🙏</span> Tell me when to get off</button>
+    <button class="phrase-chip" onclick="say('I need to get off at the next stop')"><span>🛑</span> Next stop please</button>
+    <button class="phrase-chip" onclick="say('Please wait for me')"><span>⏳</span> Please wait for me</button>
+    <button class="phrase-chip" onclick="say('Can I have a seat please? I need help.')"><span>💺</span> May I have a seat?</button>
+    <button class="phrase-chip" onclick="say('I am lost. Can you help me?')"><span>😟</span> I am lost</button>
+  </div>
+</div>
+
+<!-- ═══════════════ FOOD PANEL ═══════════════ -->
+<div class="panel" id="panel-food">
+
+  <div class="section-title">🍜 Ordering Food</div>
+  <div class="btn-grid">
+    <button class="aac-btn food" onclick="say('I want to order food')"><span class="icon">🍽️</span><span class="label">Order Food</span></button>
+    <button class="aac-btn food" onclick="say('I am hungry')"><span class="icon">😋</span><span class="label">I am Hungry</span></button>
+    <button class="aac-btn food" onclick="say('I am thirsty')"><span class="icon">🥤</span><span class="label">I am Thirsty</span></button>
+    <button class="aac-btn food" onclick="say('Can I have the menu please?')"><span class="icon">📋</span><span class="label">Menu Please</span></button>
+    <button class="aac-btn food" onclick="say('No chilli please')"><span class="icon">🌶️</span><span class="label">No Chilli</span><span class="sublabel">辣椒不要</span></button>
+    <button class="aac-btn food" onclick="say('No peanuts please, I have an allergy')"><span class="icon">🥜</span><span class="label">No Peanuts</span><span class="sublabel">Allergy</span></button>
+  </div>
+
+  <div class="section-title">🍲 Local Food (Hawker)</div>
+  <div class="btn-grid compact">
+    <button class="aac-btn food" onclick="say('I want chicken rice please')"><span class="icon">🍗</span><span class="label">Chicken Rice</span><span class="sublabel">鸡饭</span></button>
+    <button class="aac-btn food" onclick="say('I want nasi lemak please')"><span class="icon">🍛</span><span class="label">Nasi Lemak</span></button>
+    <button class="aac-btn food" onclick="say('I want wonton noodles please')"><span class="icon">🍜</span><span class="label">Wonton Mee</span><span class="sublabel">云吞面</span></button>
+    <button class="aac-btn food" onclick="say('I want char kway teow please')"><span class="icon">🥘</span><span class="label">Char Kway Teow</span></button>
+    <button class="aac-btn food" onclick="say('I want roti prata please')"><span class="icon">🫓</span><span class="label">Roti Prata</span></button>
+    <button class="aac-btn food" onclick="say('I want mee goreng please')"><span class="icon">🍝</span><span class="label">Mee Goreng</span></button>
+  </div>
+
+  <div class="section-title">🥤 Drinks</div>
+  <div class="btn-grid compact">
+    <button class="aac-btn food" onclick="say('I want Milo please')"><span class="icon">☕</span><span class="label">Milo</span></button>
+    <button class="aac-btn food" onclick="say('I want teh tarik please')"><span class="icon">🍵</span><span class="label">Teh Tarik</span></button>
+    <button class="aac-btn food" onclick="say('I want kopi please')"><span class="icon">☕</span><span class="label">Kopi</span></button>
+    <button class="aac-btn food" onclick="say('I want bandung please')"><span class="icon">🥛</span><span class="label">Bandung</span></button>
+    <button class="aac-btn food" onclick="say('I want water please')"><span class="icon">💧</span><span class="label">Water</span></button>
+    <button class="aac-btn food" onclick="say('I want fresh orange juice please')"><span class="icon">🍊</span><span class="label">Orange Juice</span></button>
+  </div>
+
+  <div class="section-title">💬 Paying</div>
+  <div class="chips-wrap">
+    <button class="phrase-chip" onclick="say('How much does this cost?')"><span>💰</span> How much is this?</button>
+    <button class="phrase-chip" onclick="say('I will pay by PayNow')"><span>📱</span> Pay by PayNow</button>
+    <button class="phrase-chip" onclick="say('I will pay by cash')"><span>💵</span> Pay by cash</button>
+    <button class="phrase-chip" onclick="say('Can I have a receipt please?')"><span>🧾</span> Receipt please</button>
+    <button class="phrase-chip" onclick="say('Thank you for the food!')"><span>😊</span> Thank you!</button>
+    <button class="phrase-chip" onclick="say('This food is delicious!')"><span>😍</span> Very yummy!</button>
+  </div>
+</div>
+
+<!-- ═══════════════ SHOPPING PANEL ═══════════════ -->
+<div class="panel" id="panel-shopping">
+
+  <div class="section-title">🛒 At the Shop</div>
+  <div class="btn-grid">
+    <button class="aac-btn shopping" onclick="say('I need help finding something')"><span class="icon">🔍</span><span class="label">Help Me Find</span></button>
+    <button class="aac-btn shopping" onclick="say('Where is the toilet please?')"><span class="icon">🚻</span><span class="label">Where is Toilet?</span></button>
+    <button class="aac-btn shopping" onclick="say('How much does this cost?')"><span class="icon">💰</span><span class="label">How Much?</span></button>
+    <button class="aac-btn shopping" onclick="say('Do you have a smaller size?')"><span class="icon">👕</span><span class="label">Smaller Size</span></button>
+    <button class="aac-btn shopping" onclick="say('Do you have a bigger size?')"><span class="icon">👔</span><span class="label">Bigger Size</span></button>
+    <button class="aac-btn shopping" onclick="say('I want to try this on')"><span class="icon">🪞</span><span class="label">Try On</span></button>
+  </div>
+
+  <div class="section-title">🛍️ I Want to Buy</div>
+  <div class="btn-grid compact">
+    <button class="aac-btn shopping" onclick="say('I want to buy this')"><span class="icon">✅</span><span class="label">Buy This</span></button>
+    <button class="aac-btn shopping" onclick="say('I do not want this')"><span class="icon">❌</span><span class="label">Don't Want</span></button>
+    <button class="aac-btn shopping" onclick="say('I want to look around more')"><span class="icon">👀</span><span class="label">Look Around</span></button>
+    <button class="aac-btn shopping" onclick="say('Can I have a bag please?')"><span class="icon">🛍️</span><span class="label">Bag Please</span></button>
+    <button class="aac-btn shopping" onclick="say('I want to pay now')"><span class="icon">💳</span><span class="label">Pay Now</span></button>
+    <button class="aac-btn shopping" onclick="say('Is there a discount?')"><span class="icon">🏷️</span><span class="label">Any Discount?</span></button>
+  </div>
+
+  <div class="section-title">💬 Payment</div>
+  <div class="chips-wrap">
+    <button class="phrase-chip" onclick="say('I will pay by NETS')"><span>💳</span> Pay by NETS</button>
+    <button class="phrase-chip" onclick="say('I will pay by PayNow')"><span>📱</span> Pay by PayNow</button>
+    <button class="phrase-chip" onclick="say('I will pay by cash')"><span>💵</span> Pay by cash</button>
+    <button class="phrase-chip" onclick="say('Can I have a receipt?')"><span>🧾</span> Receipt please</button>
+    <button class="phrase-chip" onclick="say('Please wait, I am looking for money')"><span>⏳</span> Wait, finding money</button>
+  </div>
+</div>
+
+<!-- ═══════════════ SOCIAL PANEL ═══════════════ -->
+<div class="panel" id="panel-social">
+
+  <div class="section-title">👋 Greetings</div>
+  <div class="btn-grid">
+    <button class="aac-btn social" onclick="say('Hello!')"><span class="icon">👋</span><span class="label">Hello!</span></button>
+    <button class="aac-btn social" onclick="say('Good morning!')"><span class="icon">🌅</span><span class="label">Good Morning!</span></button>
+    <button class="aac-btn social" onclick="say('Good afternoon!')"><span class="icon">☀️</span><span class="label">Good Afternoon!</span></button>
+    <button class="aac-btn social" onclick="say('Goodbye! See you later!')"><span class="icon">👍</span><span class="label">Goodbye!</span></button>
+    <button class="aac-btn social" onclick="say('Thank you very much!')"><span class="icon">🙏</span><span class="label">Thank You!</span></button>
+    <button class="aac-btn social" onclick="say('Please help me')"><span class="icon">🤝</span><span class="label">Please Help Me</span></button>
+  </div>
+
+  <div class="section-title">😊 How I Feel</div>
+  <div class="btn-grid compact">
+    <button class="aac-btn social" onclick="say('I am happy!')"><span class="icon">😄</span><span class="label">Happy</span></button>
+    <button class="aac-btn social" onclick="say('I am sad')"><span class="icon">😢</span><span class="label">Sad</span></button>
+    <button class="aac-btn social" onclick="say('I am tired')"><span class="icon">😴</span><span class="label">Tired</span></button>
+    <button class="aac-btn social" onclick="say('I do not feel well')"><span class="icon">🤒</span><span class="label">Not Feeling Well</span></button>
+    <button class="aac-btn social" onclick="say('I am scared')"><span class="icon">😨</span><span class="label">Scared</span></button>
+    <button class="aac-btn social" onclick="say('I am excited!')"><span class="icon">🤩</span><span class="label">Excited</span></button>
+    <button class="aac-btn social" onclick="say('I am bored')"><span class="icon">😑</span><span class="label">Bored</span></button>
+    <button class="aac-btn social" onclick="say('I am frustrated')"><span class="icon">😤</span><span class="label">Frustrated</span></button>
+  </div>
+
+  <div class="section-title">🗣️ Talking with Friends</div>
+  <div class="chips-wrap">
+    <button class="phrase-chip" onclick="say('Do you want to play with me?')"><span>🎮</span> Play with me?</button>
+    <button class="phrase-chip" onclick="say('Can I join you?')"><span>🙋</span> Can I join?</button>
+    <button class="phrase-chip" onclick="say('I like that!')"><span>❤️</span> I like that!</button>
+    <button class="phrase-chip" onclick="say('I do not like that')"><span>👎</span> I don't like that</button>
+    <button class="phrase-chip" onclick="say('Yes, please!')"><span>✅</span> Yes!</button>
+    <button class="phrase-chip" onclick="say('No, thank you')"><span>❌</span> No thank you</button>
+    <button class="phrase-chip" onclick="say('Wait for me please!')"><span>⏳</span> Wait for me!</button>
+    <button class="phrase-chip" onclick="say('That is very funny!')"><span>😂</span> So funny!</button>
+    <button class="phrase-chip" onclick="say('I want to go home now')"><span>🏠</span> I want to go home</button>
+    <button class="phrase-chip" onclick="say('Can we take a photo together?')"><span>📸</span> Take photo together?</button>
+  </div>
+
+  <div class="section-title">🏫 At School</div>
+  <div class="chips-wrap">
+    <button class="phrase-chip" onclick="say('I do not understand')"><span>🤔</span> I don't understand</button>
+    <button class="phrase-chip" onclick="say('Can you repeat that please?')"><span>🔁</span> Please repeat</button>
+    <button class="phrase-chip" onclick="say('I need help with this')"><span>✋</span> I need help</button>
+    <button class="phrase-chip" onclick="say('I finished my work!')"><span>🎉</span> I finished!</button>
+    <button class="phrase-chip" onclick="say('Can I go to the toilet?')"><span>🚻</span> May I use toilet?</button>
+  </div>
+</div>
+
+<!-- ═══════════════ EMERGENCY PANEL ═══════════════ -->
+<div class="panel" id="panel-emergency">
+
+  <div class="section-title">🆘 Emergency — Tap Immediately</div>
+  <div class="btn-grid">
+    <button class="aac-btn emergency" onclick="sayNow('HELP! I need help right away! Please call 999!')"><span class="icon">🆘</span><span class="label">EMERGENCY!</span><span class="sublabel">Call 999</span></button>
+    <button class="aac-btn emergency" onclick="sayNow('I am lost! Please help me! I cannot speak.')"><span class="icon">😰</span><span class="label">I AM LOST!</span></button>
+    <button class="aac-btn emergency" onclick="sayNow('I am hurt and in pain! Please help me!')"><span class="icon">🤕</span><span class="label">I AM HURT!</span></button>
+    <button class="aac-btn emergency" onclick="sayNow('I cannot breathe properly! Please call an ambulance!')"><span class="icon">😮‍💨</span><span class="label">HARD TO BREATHE</span></button>
+    <button class="aac-btn emergency" onclick="sayNow('Please call my parent or guardian now!')"><span class="icon">📞</span><span class="label">CALL MY PARENT</span></button>
+    <button class="aac-btn emergency" onclick="sayNow('Someone is being unkind to me. I need help.')"><span class="icon">😡</span><span class="label">SOMEONE HURTING ME</span></button>
+  </div>
+
+  <div class="section-title">ℹ️ About Me Card</div>
+  <div style="background:#fff;border-radius:16px;padding:16px;border:2px solid #E8E0D8;box-shadow:var(--shadow);">
+    <p style="font-weight:800;font-size:14px;color:#555;margin-bottom:10px;">Show this card to anyone who needs to help you:</p>
+    <div id="aboutCard" style="background:#FFF9F0;border-radius:12px;padding:14px;border:2px dashed #DDD;">
+      <p style="font-size:15px;font-weight:900;color:#333;">👤 My name is: <span id="childName" style="color:#4A90D9;">_______________</span></p>
+      <p style="font-size:13px;font-weight:700;color:#555;margin-top:6px;">📞 Emergency contact: <span id="emergencyContact">_______________</span></p>
+      <p style="font-size:13px;font-weight:700;color:#555;margin-top:4px;">🏠 I live at: <span id="homeAddress">_______________</span></p>
+      <p style="font-size:12px;font-weight:600;color:#888;margin-top:8px;">⚠️ I have difficulty speaking. Please be patient and read this card.</p>
+    </div>
+    <button onclick="editAboutCard()" style="margin-top:10px;background:#4A90D9;color:#fff;border:none;border-radius:10px;padding:8px 16px;font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;cursor:pointer;">✏️ Edit My Info</button>
+  </div>
+
+  <div class="section-title">💬 Staying Calm</div>
+  <div class="chips-wrap">
+    <button class="phrase-chip" onclick="say('I cannot speak but I understand you')"><span>👂</span> I understand you</button>
+    <button class="phrase-chip" onclick="say('Please be patient with me')"><span>🙏</span> Please be patient</button>
+    <button class="phrase-chip" onclick="say('I am using an app to communicate')"><span>📱</span> I use this app to talk</button>
+    <button class="phrase-chip" onclick="say('My name is shown on this screen')"><span>🪪</span> My name is on screen</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- EDIT CARD MODAL -->
+<div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:20px;padding:24px;margin:20px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <h2 style="font-size:18px;font-weight:900;margin-bottom:16px;">✏️ Edit My Info</h2>
+    <label style="font-size:13px;font-weight:700;color:#555;">My Name:</label>
+    <input id="nameInput" style="display:block;width:100%;margin:6px 0 12px;padding:10px;border-radius:10px;border:2px solid #DDD;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;" placeholder="Enter name">
+    <label style="font-size:13px;font-weight:700;color:#555;">Emergency Contact (Name & Number):</label>
+    <input id="contactInput" style="display:block;width:100%;margin:6px 0 12px;padding:10px;border-radius:10px;border:2px solid #DDD;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;" placeholder="e.g. Mum: 9123 4567">
+    <label style="font-size:13px;font-weight:700;color:#555;">Home Address / Area:</label>
+    <input id="addressInput" style="display:block;width:100%;margin:6px 0 16px;padding:10px;border-radius:10px;border:2px solid #DDD;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;" placeholder="e.g. Tampines, Block 123">
+    <div style="display:flex;gap:10px;">
+      <button onclick="saveAboutCard()" style="flex:1;background:#4A90D9;color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;cursor:pointer;">💾 Save</button>
+      <button onclick="closeModal()" style="flex:1;background:#F0EAE0;color:#888;border:none;border-radius:10px;padding:12px;font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────
+  let words = [];
+  const synth = window.speechSynthesis;
+  let isSpeaking = false;
+
+  // ── Switch Tab ─────────────────────────────────────────
+  function switchTab(cat) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.cat === cat));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + cat));
+  }
+
+  // ── Add word/phrase to strip ───────────────────────────
+  function say(text) {
+    words.push(text);
+    renderStrip();
+    // Haptic feedback if available
+    if (navigator.vibrate) navigator.vibrate(40);
+  }
+
+  function renderStrip() {
+    const el = document.getElementById('speechText');
+    const ph = document.getElementById('speechPlaceholder');
+    if (words.length === 0) {
+      el.innerHTML = '<span id="speechPlaceholder">Tap buttons to build your message…</span>';
+      return;
+    }
+    el.innerHTML = words.map((w, i) =>
+      `<span class="speech-word" onclick="removeWord(${i})" title="Tap to remove">${w}</span>`
+    ).join('');
+  }
+
+  function removeWord(i) {
+    words.splice(i, 1);
+    renderStrip();
+  }
+
+  function clearSpeech() {
+    words = [];
+    renderStrip();
+    synth.cancel();
+    stopWave();
+  }
+
+  // ── Speak immediately (emergency) ─────────────────────
+  function sayNow(text) {
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    speak(text);
+  }
+
+  // ── Speak all ──────────────────────────────────────────
+  function speakAll() {
+    if (words.length === 0) { showToast('Add words first!'); return; }
+    speak(words.join('. '));
+  }
+
+  function speak(text) {
+    synth.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'en-SG';
+    utter.rate = 0.88;
+    utter.pitch = 1.05;
+    utter.volume = 1;
+
+    // Try Singapore English voice
+    const voices = synth.getVoices();
+    const sg = voices.find(v => v.lang === 'en-SG') ||
+               voices.find(v => v.lang.startsWith('en-GB')) ||
+               voices.find(v => v.lang.startsWith('en'));
+    if (sg) utter.voice = sg;
+
+    utter.onstart = () => { isSpeaking=true; startWave(); };
+    utter.onend = utter.onerror = () => { isSpeaking=false; stopWave(); };
+
+    synth.speak(utter);
+  }
+
+  function startWave() {
+    document.getElementById('waveAnim').style.display='inline-flex';
+    document.getElementById('speakBtnLabel').style.display='none';
+  }
+  function stopWave() {
+    document.getElementById('waveAnim').style.display='none';
+    document.getElementById('speakBtnLabel').style.display='inline';
+  }
+
+  // ── Toast ──────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  // ── About Card ─────────────────────────────────────────
+  function editAboutCard() {
+    document.getElementById('nameInput').value = localStorage.getItem('childName') || '';
+    document.getElementById('contactInput').value = localStorage.getItem('emergencyContact') || '';
+    document.getElementById('addressInput').value = localStorage.getItem('homeAddress') || '';
+    document.getElementById('editModal').style.display = 'flex';
+  }
+  function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+  function saveAboutCard() {
+    const name = document.getElementById('nameInput').value || '_______________';
+    const contact = document.getElementById('contactInput').value || '_______________';
+    const address = document.getElementById('addressInput').value || '_______________';
+    localStorage.setItem('childName', name);
+    localStorage.setItem('emergencyContact', contact);
+    localStorage.setItem('homeAddress', address);
+    document.getElementById('childName').textContent = name;
+    document.getElementById('emergencyContact').textContent = contact;
+    document.getElementById('homeAddress').textContent = address;
+    closeModal();
+    showToast('✅ Saved!');
+  }
+
+  // ── Init ───────────────────────────────────────────────
+  window.addEventListener('load', () => {
+    // Restore saved info
+    const n = localStorage.getItem('childName');
+    const c = localStorage.getItem('emergencyContact');
+    const a = localStorage.getItem('homeAddress');
+    if (n) document.getElementById('childName').textContent = n;
+    if (c) document.getElementById('emergencyContact').textContent = c;
+    if (a) document.getElementById('homeAddress').textContent = a;
+
+    // Load voices
+    if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = () => {};
+  });
+</script>
+</body>
+</html>
