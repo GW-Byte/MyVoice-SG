@@ -66,6 +66,24 @@
   }
   .btn-speech-output:active { transform:scale(0.95); box-shadow:none; }
 
+  .btn-voice-toggle {
+    background: linear-gradient(135deg, #FF8FAB, #FFB347);
+    color: #fff;
+    border: none; border-radius:40px;
+    padding: 8px 14px;
+    font-family:'Nunito',sans-serif;
+    font-weight:800; font-size:13px;
+    cursor:pointer;
+    display:flex; align-items:center; gap:5px;
+    box-shadow: 0 4px 12px rgba(255,143,171,0.4);
+    transition: transform 0.1s, box-shadow 0.1s, background 0.3s;
+  }
+  .btn-voice-toggle:active { transform:scale(0.95); box-shadow:none; }
+  .btn-voice-toggle.man {
+    background: linear-gradient(135deg, #5B8DEF, #43C6AC);
+    box-shadow: 0 4px 12px rgba(91,141,239,0.4);
+  }
+
   /* ── SPEECH STRIP ── */
   #speechStrip {
     background: #fff;
@@ -264,6 +282,9 @@
     </div>
   </div>
   <div class="header-right">
+    <button class="btn-voice-toggle" id="voiceToggleBtn" onclick="toggleVoice()" title="Switch voice">
+      <span id="voiceToggleLabel">👩 Lady</span>
+    </button>
     <button class="btn-speech-output" id="mainSpeakBtn" onclick="speakAll()">
       <div class="speaking-wave" id="waveAnim" style="display:none">
         <span></span><span></span><span></span>
@@ -431,12 +452,12 @@
   <div class="btn-grid compact">
     <button class="aac-btn social" onclick="say('I am happy!')"><span class="icon">😄</span><span class="label">Happy</span></button>
     <button class="aac-btn social" onclick="say('I am sad')"><span class="icon">😢</span><span class="label">Sad</span></button>
-    <button class="aac-btn social" onclick="say('I am tired')"><span class="icon">😴</span><span class="label">Tired</span></button>
+    <button class="aac-btn social" onclick="say('I am tired')"><span class="icon">😩</span><span class="label">Tired</span></button>
     <button class="aac-btn social" onclick="say('I do not feel well')"><span class="icon">🤒</span><span class="label">Not Feeling Well</span></button>
-    <button class="aac-btn social" onclick="say('I am scared')"><span class="icon">😨</span><span class="label">Scared</span></button>
+    <button class="aac-btn social" onclick="say('I am scared')"><span class="icon">😱</span><span class="label">Scared</span></button>
     <button class="aac-btn social" onclick="say('I am excited!')"><span class="icon">🤩</span><span class="label">Excited</span></button>
-    <button class="aac-btn social" onclick="say('I am bored')"><span class="icon">😑</span><span class="label">Bored</span></button>
-    <button class="aac-btn social" onclick="say('I am frustrated')"><span class="icon">😤</span><span class="label">Frustrated</span></button>
+    <button class="aac-btn social" onclick="say('I am bored')"><span class="icon">🥱</span><span class="label">Bored</span></button>
+    <button class="aac-btn social" onclick="say('I am frustrated')"><span class="icon">😠</span><span class="label">Frustrated</span></button>
   </div>
 
   <div class="section-title">🗣️ Talking with Friends</div>
@@ -522,6 +543,22 @@
   let words = [];
   const synth = window.speechSynthesis;
   let isSpeaking = false;
+  let voiceGender = 'lady'; // 'lady' or 'man'
+
+  // ── Toggle Voice ───────────────────────────────────────
+  function toggleVoice() {
+    voiceGender = voiceGender === 'lady' ? 'man' : 'lady';
+    const btn = document.getElementById('voiceToggleBtn');
+    const label = document.getElementById('voiceToggleLabel');
+    if (voiceGender === 'lady') {
+      label.textContent = '👩 Lady';
+      btn.classList.remove('man');
+    } else {
+      label.textContent = '👨 Man';
+      btn.classList.add('man');
+    }
+    showToast(voiceGender === 'lady' ? '👩 Lady voice selected!' : '👨 Man voice selected!');
+  }
 
   // ── Switch Tab ─────────────────────────────────────────
   function switchTab(cat) {
@@ -579,16 +616,25 @@
     synth.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'en-SG';
-    utter.rate = 0.88;
-    utter.pitch = 1.05;
+    utter.rate = 0.95;      // slightly more lively than before
+    utter.pitch = 1.3;      // higher, child-friendly pitch
     utter.volume = 1;
 
-    // Try Singapore English voice
     const voices = synth.getVoices();
-    const sg = voices.find(v => v.lang === 'en-SG') ||
-               voices.find(v => v.lang.startsWith('en-GB')) ||
-               voices.find(v => v.lang.startsWith('en'));
-    if (sg) utter.voice = sg;
+
+    if (voiceGender === 'lady') {
+      // Prefer female voices: look for known female voice names
+      const femaleKeywords = ['female','woman','girl','zira','victoria','karen','samantha','moira','fiona','tessa','anna','susan','linda','kate'];
+      let voice = voices.find(v => femaleKeywords.some(k => v.name.toLowerCase().includes(k)) && v.lang.startsWith('en'));
+      if (!voice) voice = voices.find(v => v.lang === 'en-SG') || voices.find(v => v.lang.startsWith('en-GB')) || voices.find(v => v.lang.startsWith('en'));
+      if (voice) utter.voice = voice;
+    } else {
+      // Prefer male voices
+      const maleKeywords = ['male','man','daniel','alex','david','james','mark','thomas','george','rishi','lee','fred'];
+      let voice = voices.find(v => maleKeywords.some(k => v.name.toLowerCase().includes(k)) && v.lang.startsWith('en'));
+      if (!voice) voice = voices.find(v => v.lang === 'en-SG') || voices.find(v => v.lang.startsWith('en-GB')) || voices.find(v => v.lang.startsWith('en'));
+      if (voice) utter.voice = voice;
+    }
 
     utter.onstart = () => { isSpeaking=true; startWave(); };
     utter.onend = utter.onerror = () => { isSpeaking=false; stopWave(); };
